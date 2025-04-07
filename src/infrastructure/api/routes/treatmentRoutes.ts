@@ -15,34 +15,46 @@ import { getMongoClient } from '../../config/database';
 // Crear router
 const router = Router();
 
-// Crear las dependencias
-const treatmentRepository = new MongoDbTreatmentRepository(getMongoClient());
-const createTreatmentUseCase = new CreateTreatmentUseCase(treatmentRepository);
-const getTreatmentUseCase = new GetTreatmentUseCase(treatmentRepository);
-const listTreatmentsUseCase = new ListTreatmentsUseCase(treatmentRepository);
-const updateTreatmentUseCase = new UpdateTreatmentUseCase(treatmentRepository);
-const completeTreatmentUseCase = new CompleteTreatmentUseCase(treatmentRepository);
-const cancelTreatmentUseCase = new CancelTreatmentUseCase(treatmentRepository);
-const reactivateTreatmentUseCase = new ReactivateTreatmentUseCase(treatmentRepository);
+// Función que crea y devuelve el controlador de tratamientos
+const getTreatmentController = (): TreatmentController => {
+  const treatmentRepository = new MongoDbTreatmentRepository(getMongoClient());
+  const createTreatmentUseCase = new CreateTreatmentUseCase(treatmentRepository);
+  const getTreatmentUseCase = new GetTreatmentUseCase(treatmentRepository);
+  const listTreatmentsUseCase = new ListTreatmentsUseCase(treatmentRepository);
+  const updateTreatmentUseCase = new UpdateTreatmentUseCase(treatmentRepository);
+  const completeTreatmentUseCase = new CompleteTreatmentUseCase(treatmentRepository);
+  const cancelTreatmentUseCase = new CancelTreatmentUseCase(treatmentRepository);
+  const reactivateTreatmentUseCase = new ReactivateTreatmentUseCase(treatmentRepository);
 
-// Crear el controlador
-const treatmentController = new TreatmentController(
-  createTreatmentUseCase,
-  getTreatmentUseCase,
-  listTreatmentsUseCase,
-  updateTreatmentUseCase,
-  completeTreatmentUseCase,
-  cancelTreatmentUseCase,
-  reactivateTreatmentUseCase
-);
+  return new TreatmentController(
+    createTreatmentUseCase,
+    getTreatmentUseCase,
+    listTreatmentsUseCase,
+    updateTreatmentUseCase,
+    completeTreatmentUseCase,
+    cancelTreatmentUseCase,
+    reactivateTreatmentUseCase
+  );
+};
 
-// Definir las rutas
-router.post('/', treatmentController.createTreatment.bind(treatmentController));
-router.get('/:id', treatmentController.getTreatment.bind(treatmentController));
-router.get('/', treatmentController.listTreatments.bind(treatmentController));
-router.put('/:id', treatmentController.updateTreatment.bind(treatmentController));
-router.post('/:id/complete', treatmentController.completeTreatment.bind(treatmentController));
-router.post('/:id/cancel', treatmentController.cancelTreatment.bind(treatmentController));
-router.post('/:id/reactivate', treatmentController.reactivateTreatment.bind(treatmentController));
+// Variable para almacenar el controlador (singleton)
+let treatmentController: TreatmentController | null = null;
+
+// Helper para obtener el controlador (inicialización perezosa)
+const getController = () => {
+  if (!treatmentController) {
+    treatmentController = getTreatmentController();
+  }
+  return treatmentController;
+};
+
+// Definir las rutas usando el helper
+router.post('/', (req, res) => getController().createTreatment(req, res));
+router.get('/:id', (req, res) => getController().getTreatment(req, res));
+router.get('/', (req, res) => getController().listTreatments(req, res));
+router.put('/:id', (req, res) => getController().updateTreatment(req, res));
+router.post('/:id/complete', (req, res) => getController().completeTreatment(req, res));
+router.post('/:id/cancel', (req, res) => getController().cancelTreatment(req, res));
+router.post('/:id/reactivate', (req, res) => getController().reactivateTreatment(req, res));
 
 export const treatmentRoutes = router; 

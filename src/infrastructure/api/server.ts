@@ -12,11 +12,10 @@ export class Server {
   private app: Application;
   private port: number;
 
-  constructor(port: number = 3000) {
+  constructor(port: number = 3001) {
     this.app = express();
     this.port = port;
     this.setupMiddlewares();
-    this.setupRoutes();
   }
 
   /**
@@ -50,6 +49,9 @@ export class Server {
     try {
       // Conectar a la base de datos
       await connectToDatabase();
+      
+      // Configurar rutas después de conectar a la base de datos
+      this.setupRoutes();
       
       // Iniciar el servidor
       this.app.listen(this.port, () => {

@@ -16,37 +16,49 @@ import { getMongoClient } from '../../config/database';
 // Crear router
 const router = Router();
 
-// Crear las dependencias
-const patientRepository = new MongoDbPatientRepository(getMongoClient());
-const createPatientUseCase = new CreatePatientUseCase(patientRepository);
-const getPatientUseCase = new GetPatientUseCase(patientRepository);
-const listPatientsUseCase = new ListPatientsUseCase(patientRepository);
-const updatePatientUseCase = new UpdatePatientUseCase(patientRepository);
-const deletePatientUseCase = new DeletePatientUseCase(patientRepository);
-const activatePatientUseCase = new ActivatePatientUseCase(patientRepository);
-const updatePatientAllergiesUseCase = new UpdatePatientAllergiesUseCase(patientRepository);
-const updatePatientContactInfoUseCase = new UpdatePatientContactInfoUseCase(patientRepository);
+// Función que crea y devuelve el controlador de pacientes
+const getPatientController = (): PatientController => {
+  const patientRepository = new MongoDbPatientRepository(getMongoClient());
+  const createPatientUseCase = new CreatePatientUseCase(patientRepository);
+  const getPatientUseCase = new GetPatientUseCase(patientRepository);
+  const listPatientsUseCase = new ListPatientsUseCase(patientRepository);
+  const updatePatientUseCase = new UpdatePatientUseCase(patientRepository);
+  const deletePatientUseCase = new DeletePatientUseCase(patientRepository);
+  const activatePatientUseCase = new ActivatePatientUseCase(patientRepository);
+  const updatePatientAllergiesUseCase = new UpdatePatientAllergiesUseCase(patientRepository);
+  const updatePatientContactInfoUseCase = new UpdatePatientContactInfoUseCase(patientRepository);
 
-// Crear el controlador
-const patientController = new PatientController(
-  createPatientUseCase,
-  getPatientUseCase,
-  listPatientsUseCase,
-  updatePatientUseCase,
-  deletePatientUseCase,
-  activatePatientUseCase,
-  updatePatientAllergiesUseCase,
-  updatePatientContactInfoUseCase
-);
+  return new PatientController(
+    createPatientUseCase,
+    getPatientUseCase,
+    listPatientsUseCase,
+    updatePatientUseCase,
+    deletePatientUseCase,
+    activatePatientUseCase,
+    updatePatientAllergiesUseCase,
+    updatePatientContactInfoUseCase
+  );
+};
 
-// Definir las rutas
-router.post('/', patientController.createPatient.bind(patientController));
-router.get('/:id', patientController.getPatient.bind(patientController));
-router.get('/', patientController.listPatients.bind(patientController));
-router.put('/:id', patientController.updatePatient.bind(patientController));
-router.delete('/:id', patientController.deletePatient.bind(patientController));
-router.post('/:id/activate', patientController.activatePatient.bind(patientController));
-router.put('/:id/allergies', patientController.updateAllergies.bind(patientController));
-router.put('/:id/contact-info', patientController.updateContactInfo.bind(patientController));
+// Variable para almacenar el controlador (singleton)
+let patientController: PatientController | null = null;
+
+// Helper para obtener el controlador (inicialización perezosa)
+const getController = () => {
+  if (!patientController) {
+    patientController = getPatientController();
+  }
+  return patientController;
+};
+
+// Definir las rutas usando el helper
+router.post('/', (req, res) => getController().createPatient(req, res));
+router.get('/:id', (req, res) => getController().getPatient(req, res));
+router.get('/', (req, res) => getController().listPatients(req, res));
+router.put('/:id', (req, res) => getController().updatePatient(req, res));
+router.delete('/:id', (req, res) => getController().deletePatient(req, res));
+router.post('/:id/activate', (req, res) => getController().activatePatient(req, res));
+router.put('/:id/allergies', (req, res) => getController().updateAllergies(req, res));
+router.put('/:id/contact-info', (req, res) => getController().updateContactInfo(req, res));
 
 export const patientRoutes = router; 
